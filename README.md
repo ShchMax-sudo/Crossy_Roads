@@ -53,15 +53,3 @@ In the command line open at the root of this project enter the following command
 
 Then you will find a series of zip in the build/distributions folder. These zip will contain your game, all the libraries to run it and an
 OS specific JRE. (The same files will also be available unzipped in a folder, which may be useful if distributing via steampipe or similar).
-
-
-## Next Steps
-You may wish to commit your project to a git repository to keep track of your changes (so you can roll back if anything goes wrong)
-
-## Adding more libraries
-During the JMonkey Initializer you chose from a small subset of the available java libraries.
-You can add more by editing the dependencies section in the build.gradle file
-
-## txt vs md
-
-This readme is provided as a .txt as that is a common format openable on any machine. However, it would more normally be a .md, this will allow it to be nicely formatted by most git repositories (assuming you commit it to git). Just change the extension from .txt to .md, the syntax is already correct for an md file

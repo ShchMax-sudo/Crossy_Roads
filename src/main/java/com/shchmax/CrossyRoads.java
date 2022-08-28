@@ -13,10 +13,6 @@ import com.jme3.system.*;
 
 import java.awt.*;
 
-/**
- * This is the Main Class of your Game. It should boot up your game and do initial initialisation
- * Move your Logic into AppStates or Controls or other java classes
- */
 public class CrossyRoads extends SimpleApplication {
     private CustomCamera customCamera;
     private Node player;
@@ -48,7 +44,7 @@ public class CrossyRoads extends SimpleApplication {
         player = new Node("Player");
         player.attachChild(boxGeometry);
 
-        customCamera = new CustomCamera(cam, flyCam, inputManager, player);
+        customCamera = new CustomCamera(cam, flyCam, inputManager);
 
         int cnt = 5;
         float lineSize = 1;
@@ -86,7 +82,11 @@ public class CrossyRoads extends SimpleApplication {
 
     @Override
     public void simpleUpdate(float tpf) {
-        //
+        // Camera glide
+
+        if (customCamera.isGlide()) {
+            customCamera.glideTo(player, tpf);
+        }
     }
 
     @Override
