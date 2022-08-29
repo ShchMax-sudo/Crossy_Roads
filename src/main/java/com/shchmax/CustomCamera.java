@@ -15,6 +15,8 @@ public class CustomCamera {
     private boolean mouseShiftMode = false;
     private boolean mouseRotateMode = false;
     private boolean cursorVisible = true;
+    private boolean synchrony = true;
+    private boolean gliding = false;
     private final float mouseShiftSpeed = 7.1F;
     private final float cameraGlideSpeed = 3F;
     private final float dGlide = 0.1F;
@@ -31,6 +33,9 @@ public class CustomCamera {
         chaseCamera.setChasingSensitivity(0);
         chaseCamera.setTrailingRotationInertia(0);
         chaseCamera.setTrailingEnabled(false);
+        chaseCamera.setMinDistance(2.0F);
+        chaseCamera.setMaxDistance(40.0F);
+        chaseCamera.setDownRotateOnCloseViewOnly(false);
         initKeys(inputManager);
     }
 
@@ -71,6 +76,7 @@ public class CustomCamera {
                 }
                 moveUp *= mouseShiftSpeed;
                 moveRight *= mouseShiftSpeed;
+                synchrony = false;
                 shiftCamera(moveRight, moveUp);
             }
         }, "Mouse Up", "Mouse Down", "Mouse Right", "Mouse Left");
@@ -86,49 +92,65 @@ public class CustomCamera {
         }
     }
 
-    public Vector3f getPlaneDirectionVector() {
+    public Vector3f getUpDirectionVector() {
         Vector3f directionVector = camera.getDirection();
         Vector3f verticalVector = chaseCamera.getUpVector();
         return directionVector.subtract(verticalVector.mult(verticalVector.dot(directionVector))).normalize();
     }
 
-    public void shiftCamera(float right, float up) {
+    public Vector3f getRightDirectionVector() {
         Vector3f verticalVector = chaseCamera.getUpVector();
-        Vector3f planeForwardVector = getPlaneDirectionVector();
-        Vector3f planeRightVector = planeForwardVector.cross(verticalVector).normalize();
-        Vector3f movement = planeRightVector.mult(right).add(planeForwardVector.mult(up)).mult(mouseShiftSpeed).mult(chaseCamera.getDistanceToTarget());
-        cameraNode.move(movement);
+        return getUpDirectionVector().cross(verticalVector).normalize();
+    }
+
+    public void shiftCamera(float right, float up) {
+        cameraNode.move(getRightDirectionVector().mult(right).add(getUpDirectionVector().mult(up)).mult(mouseShiftSpeed).mult(chaseCamera.getDistanceToTarget()));
     }
 
     public Node getCameraNode() {
         return cameraNode;
     }
 
-    public void resetPosition() {
-        glideBegin = cameraNode.getLocalTranslation().clone();
+    public void sync() {
+        if (!synchrony) {
+            glideBegin = cameraNode.getLocalTranslation().clone();
+        }
+        gliding = true;
+        synchrony = true;
     }
 
-    public void glideTo(Node place, float tpf) {
-        Vector3f glideEnd = place.getLocalTranslation();
+    public void desync() {
+        if (!gliding) {
+            synchrony = false;
+        }
+    }
+
+    public void glideTo(Vector3f glideEnd, float tpf) {
+        if (!synchrony) {
+            return;
+        }
         Vector3f glide = cameraNode.getLocalTranslation();
         Vector3f toEnd = glideEnd.subtract(glide);
-        Vector3f fromBegin = glide.subtract(glideBegin);
+        Vector3f fromBegin;
+        if (glideBegin != null) {
+            fromBegin = glide.subtract(glideBegin);
+        } else {
+            fromBegin = toEnd;
+        }
+        if (fromBegin.length() > toEnd.length()) {
+            glideBegin = null;
+        }
         if (toEnd.dot(fromBegin) < 0 && toEnd.length() <= dGlide) {
             Vector3f movement = toEnd.normalize().mult(cameraGlideSpeed * tpf);
             if (movement.length() >= toEnd.length()) {
                 movement = toEnd;
                 glideBegin = null;
+                synchrony = true;
+                gliding = false;
             }
             cameraNode.move(movement);
         } else {
-            if (toEnd.dot(fromBegin) < 0) {
-                fromBegin = toEnd;
-            }
             cameraNode.move(toEnd.normalize().mult((Math.min(toEnd.length(), fromBegin.length()) + dGlide) * cameraGlideSpeed * tpf));
         }
-    }
-
-    public boolean isGlide() {
-        return glideBegin != null;
     }
 }
